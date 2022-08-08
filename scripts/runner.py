@@ -32,7 +32,7 @@ while mj_sim.sim.data.time<10:
     ctrl.goal_ori=r2.as_matrix()@r.as_matrix()
 
     t0=mj_sim.sim.data.time
-    tau, J_full, decoupled_wrench, torque_comp =ctrl.run_controller()
+    tau=ctrl.run_controller()
     
     ## Set the calculated torques
     for i in range(6):
@@ -48,6 +48,7 @@ while mj_sim.sim.data.time<10:
 
     ## Step Mujoco Forward ##
     mj_sim.sim.step()
+    mj_sim.sim.data.qpos[:6]
     if view==True:
         viewer.render()
 
