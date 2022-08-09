@@ -62,19 +62,23 @@
                                 <joint name="wrist_3_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-6.28319 6.28319" />
                                 <geom pos="0 0 -0.0921" quat="0.707107 0.707107 0 0" type="mesh" rgba="0.7 0.7 0.7 1" mesh="wrist3" name="wrist3" />
                                 
-                                <body name="peg" pos="0 0 0.000" >
-                                    <geom pos="0.03 0 0.03"  size="0.01 0.03" type="cylinder" rgba="0.7 0.7 0.7 1" name="peg0" />
-                                    <geom pos="-0.03 0 0.03"  size="0.01 0.03" type="cylinder" rgba="0.7 0.7 0.7 1" name="peg1"/>
-                                    <!-- <site name='acc' pos="0 0 0.0" size='0.01 0.01 0.01' rgba='0 1 0 1' type='sphere' group='1'/>
-                                    <site name='gyro' pos="0 0 0.0" size='0.01 0.01 0.01' rgba='0 1 0 1' type='sphere' group='1'/> -->
-                                    <inertial pos = "0. 0. 0." mass="0.002"/>
-                                    <!-- <body name="pegtip" pos="0 0 0.060" > -->
+                                <body name="peg_base" pos="0 0 0.0025" >
+                                    <geom pos="0.0 0 0.0"  size="0.03 0.0025" type="cylinder" rgba="0.7 0.7 0.7 1" name="pegbase" />
                                     <site name='force_sensor' pos="0 0 0.00" size='0.01 0.01 0.01' rgba='0 1 0 0' type='sphere' group='1'/>
-                                    <site name='torque_sensor' pos="0 0 0.00" size='0.01 0.01 0.01' rgba='0 1 0 0' type='sphere' group='1'/>
-                                    <site name='mep:ee' pos="0 0.0 -0.05" size='0.01 0.01 0.01' rgba='0 1 1 1' type='sphere' group='1'/>
-                                    <site name='acc' pos="0 0 0.0" size='0.01 0.01 0.01' rgba='0 1 0 0' type='sphere' group='1'/>
-                                    <!-- </body> -->
-                                </body>                                
+                                    <body name="peg" pos="0 0 0.0" >
+                                        <!-- <geom pos="0.0 0 0.0025"  size="0.03 0.0025" type="cylinder" rgba="0.7 0.7 0.7 1" name="peg0" condim="1"/>    -->
+                                        <geom pos="0.025 0 0.03"  size="0.01 0.03" type="cylinder" rgba="0.7 0.7 0.7 1" name="peg0" />
+                                        <geom pos="-0.025 0 0.03"  size="0.01 0.03" type="cylinder" rgba="0.7 0.7 0.7 1" name="peg1"/>
+                                        <!-- <site name='acc' pos="0 0 0.0" size='0.01 0.01 0.01' rgba='0 1 0 1' type='sphere' group='1'/>
+                                        <site name='gyro' pos="0 0 0.0" size='0.01 0.01 0.01' rgba='0 1 0 1' type='sphere' group='1'/> -->
+                                        <inertial pos = "0. 0. 0." mass="0.002"/>
+                                        <!-- <body name="pegtip" pos="0 0 0.060" > -->
+                                        
+                                        <site name='torque_sensor' pos="0 0 0.00" size='0.01 0.01 0.01' rgba='0 1 0 0' type='sphere' group='1'/>
+                                        <site name='mep:ee' pos="0 0.0 -0.00" size='0.01 0.01 0.01' rgba='0 1 1 1' type='sphere' group='1'/>
+                                        <site name='acc' pos="0 0 0.0" size='0.01 0.01 0.01' rgba='0 1 0 0' type='sphere' group='1'/>
+                                    </body>
+                                </body>                               
                             </body>
                         </body>
                     </body>
@@ -94,7 +98,7 @@
             <body name="antenna" pos="-0.075 -0.3 0." quat="0.707 0 -0.707 0">
                 <site name='wpt1' pos="0. 0.175 0" size='0.015 0.015 0.015' rgba='0 0 1 1' type='sphere' group='1'/>
                 <joint name="deployable" pos="0 0.3 0" axis="1 0 0" limited="true" damping="2" stiffness="1" range="-1.59 0" />
-                <geom pos="0.0 0 0"  quat="0.707 0.707 0 0" size="0.01 0.3" type="cylinder" condim = "1" contype="0" conaffinity="1" group="1" rgba="1 0 0 0.5" name="antenna"/>
+                <geom pos="0.0 0 0"  quat="0.707 0.707 0 0" size="0.01 0.3" type="cylinder" condim = "3" contype="0" conaffinity="1" group="1" rgba="1 0 0 0.5" name="antenna"/>
             </body>
             
         </body>        

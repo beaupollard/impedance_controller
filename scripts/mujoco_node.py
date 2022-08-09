@@ -14,10 +14,11 @@ class mj_node():
     def __init__(self):
         path='/home/beau/Documents/ws_moveit/src/HIL'
         name=path+'/assets/ur3e/ur3e_dislodge.xml'
+        # name=path+'/assets/ur3e/ur3e_wallv2.xml'
         model  = load_model_from_path(name)
         self.sim = MjSim(model)
 
-        # self.init_joints=np.array([-1.4503409942482723, -1.45638511026052, -1.7246097345303315, -3.098659607330369, 0.11979764510238854, -1.574733403836265])
+        # self.init_joints=np.array([1.6382425937090916, 0.4256844286749071, -1.2910630181298555, -2.280060051656477, -0.06818132784290483, -1.5666176622613293])
         self.init_joints=np.array([-0.10243801853235805, 0.6645765466505216, -2.125822600714074, -1.6799365152523613, 0.8937045971511799, -1.571226426532903])
         for i in range(len(self.init_joints)):
             self.sim.data.qpos[i]=self.init_joints[i]

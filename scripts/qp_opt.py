@@ -6,7 +6,7 @@ import cvxpy as cp
 import math
 
 class qp_opt():
-    def __init__(self,sim):
+    def __init__(self,sim,F_des=np.zeros(6),optimize=True):
         self.sim=sim
         self.ee_site='mep:ee'
         self.target_site='wpt1'
@@ -23,22 +23,25 @@ class qp_opt():
         Jin=np.vstack((np.reshape(self.sim.data.get_site_jacp(self.ee_site)[:],(3,-1)),np.reshape(self.sim.data.get_site_jacr(self.ee_site)[:],(3,-1))))
         self.J_prev=Jin[:6,:6]
         self.dt=sim.model.opt.timestep
-        self.kp=np.array([120,120,120,120,120,120])
+        self.kp=np.array([150,150,150,150,150,150])
         self.kd=np.array([60,60,60,60,60,60])
-
-    
+        self.contact_count=0
+        self.F_des=-F_des
+        self.optimize=optimize
+  
     def run_opt(self):
 
+        self.F_des[2]=-(abs(6/1.59*self.sim.data.qpos[-1])+2)
 
         ## Get Jacobian of end effector ##
         J_ori=np.array(self.sim.data.get_site_jacr(self.ee_site).reshape((3, -1))[:, self.qvel_index])     
         J_pos=np.array(self.sim.data.get_site_jacp(self.ee_site).reshape((3, -1))[:, self.qvel_index])  
-        J=np.array(np.vstack([J_pos, J_ori]))     
-        Jtinv = np.linalg.pinv(np.transpose(J))
-        Jinv = np.linalg.pinv(J)
+        self.J=np.array(np.vstack([J_pos, J_ori]))     
+        Jtinv = np.linalg.pinv(np.transpose(self.J))
+        Jinv = np.linalg.pinv(self.J)
 
         ## Get bias terms (coriollis/gravity) ##
-        fbias=self.sim.data.qfrc_bias[:6]
+        self.fbias=self.sim.data.qfrc_bias[:6]
 
         ## Get full mass matrix ##
         rc=len(self.sim.data.qvel)
@@ -47,13 +50,13 @@ class qp_opt():
         mm=np.reshape(mm, (rc, rc))
         mass_matrix=mm[:6,:6]
 
-        dJdt=(J-self.J_prev)/self.dt
+        dJdt=(self.J-self.J_prev)/self.dt
 
-        self.J_prev=np.array(J)
+        self.J_prev=np.array(self.J)
 
         ## Me = J^-T M J^-1
-        lambda_ori=np.linalg.pinv(J_ori@np.linalg.inv(mass_matrix)@J_ori.T)
-        lambda_pos=np.linalg.pinv(J_pos@np.linalg.inv(mass_matrix)@J_pos.T)        
+        self.lambda_ori=np.linalg.pinv(J_ori@np.linalg.inv(mass_matrix)@J_ori.T)
+        self.lambda_pos=np.linalg.pinv(J_pos@np.linalg.inv(mass_matrix)@J_pos.T)        
         Me = Jtinv@mass_matrix@Jinv
 
         ## Ce ##
@@ -72,38 +75,17 @@ class qp_opt():
         position_err=np.concatenate((desired_pos-current_pos,q_err))
         velocity_err=-np.concatenate((current_velp,current_velr))
 
-        Xdes=np.diag(self.kp)@position_err+np.diag(self.kd)@velocity_err
+        self.Xdes=np.diag(self.kp)@position_err+np.diag(self.kd)@velocity_err
 
-        desired_wrench=np.concatenate((lambda_pos@Xdes[:3],lambda_ori@Xdes[3:]))
-        tau=np.transpose(J)@(desired_wrench)+fbias
-
-        ## QP Optimizer ##
-        qdot_prev=self.sim.data.qvel[:6]
-        q_prev=self.sim.data.qpos[:6]
-
-        # Construct the problem.
-        constraints=[]
-        vdot = cp.Variable(len(self.sim.data.qacc[:6]))
-        u = cp.Variable(len(self.sim.data.qacc[:6]))
-        pos_lower_lims=self.sim.model.jnt_range[:6,0]
-        pos_upper_lims=self.sim.model.jnt_range[:6,1]
-        vel_lower_lims=-math.pi/4*np.ones(6)
-        vel_upper_lims=math.pi/4*np.ones(6)
-
-        objective = cp.Minimize(cp.sum_squares(u-tau))
-        constraints.append(mass_matrix@vdot+fbias==u+self.endeffector_force())
-        constraints.append(vel_lower_lims <= vdot*self.dt+qdot_prev)
-        constraints.append(vel_lower_lims <= vdot*self.dt+qdot_prev)
-        constraints.append(vel_upper_lims >= vdot*self.dt+qdot_prev)
-        constraints.append(pos_lower_lims <= vdot*self.dt**2+qdot_prev*self.dt+q_prev)
-        constraints.append(pos_upper_lims >= vdot*self.dt**2+qdot_prev*self.dt+q_prev)        
-        prob = cp.Problem(objective, constraints)
-
-        result = prob.solve(verbose=True)
-
+        tau = self.force_control(hybrid=True,F_des=self.F_des)
         for i in range(6):
-            self.sim.data.ctrl[i]=u.value[i]
-        return vdot.value
+            self.sim.data.ctrl[i]=tau[i]
+
+        ## Run Convex QP Optimizer to satisfy constraints ## 
+        if self.optimize==True:
+            self.QP_opt(tau,mass_matrix)
+
+        return self.endeffector_force()
 
     def orientation_err(self,desired,current):
         rc1 = current[0:3, 0]
@@ -124,3 +106,75 @@ class qp_opt():
         R=self.sim.data.get_site_xmat(self.ee_site)
         Fext=-np.concatenate((np.linalg.inv(R)@Fx,np.linalg.inv(R)@Tx))
         return Fext
+
+    def force_control(self,hybrid=False,F_des=np.zeros(6)):
+        buffer=50
+        F_ext=self.endeffector_force()
+
+        desired_wrench=np.concatenate((self.lambda_pos@self.Xdes[:3],self.lambda_ori@self.Xdes[3:]))   
+        tau_pos=np.transpose(self.J)@(desired_wrench)+self.fbias
+
+        if np.linalg.norm(F_ext)<10**(-10):
+            hybrid=False
+            self.contact_count=0
+        else:
+            self.contact_count+=1
+
+        if hybrid==True:
+            ## Get into end effector frame ##
+            sigma=np.zeros(6)
+            sigma[np.where(F_des==0)]=1
+            sigma_bar=np.ones(6)-sigma
+            Sf=self.sim.data.get_site_xmat(self.ee_site)
+            omega_f=Sf.T@np.diag(sigma[:3])@Sf
+            omega_t=Sf.T@np.diag(sigma[3:])@Sf
+            # desired_wrench_pos=np.concatenate((self.lambda_pos@omega_f@self.Xdes[:3],self.lambda_ori@omega_t@self.Xdes[3:]))
+            desired_wrench_pos=np.concatenate((self.lambda_pos@omega_f@self.Xdes[:3],self.lambda_ori@omega_t@self.Xdes[3:]))
+            omegabar_f=Sf.T@np.diag(sigma_bar[:3])
+            omegabar_t=Sf.T@np.diag(sigma_bar[3:])
+            # desired_wrench_force=np.concatenate((self.lambda_pos@omegabar_f@F_des[:3],self.lambda_ori@omegabar_t@F_des[3:]))
+            desired_wrench_force=np.concatenate((omegabar_f@F_des[:3],omegabar_t@F_des[3:]))
+            Force_err=F_ext-np.concatenate((Sf.T@F_des[:3],Sf.T@F_des[3:6]))
+            tau_force=np.transpose(self.J)@(desired_wrench_pos+desired_wrench_force-Force_err)+self.fbias
+            if self.contact_count<buffer:
+                tau=(1-self.contact_count/buffer)*tau_pos+self.contact_count/buffer*(tau_force)
+            else:
+                # inp=desired_wrench_pos+desired_wrench_force-Force_err
+                # inp[0]=-2
+                # tau=np.transpose(self.J)@inp+self.fbias
+                tau=tau_force
+        else:
+            tau=np.transpose(self.J)@(desired_wrench)+self.fbias
+
+        
+        return tau
+
+    def QP_opt(self,tau,mass_matrix):
+        ## QP Optimizer ##
+        qdot_prev=self.sim.data.qvel[:6]
+        q_prev=self.sim.data.qpos[:6]
+
+        # Construct the problem.
+        constraints=[]
+        vdot = cp.Variable(len(self.sim.data.qacc[:6]))
+        u = cp.Variable(len(self.sim.data.qacc[:6]))
+        pos_lower_lims=self.sim.model.jnt_range[:6,0]
+        pos_upper_lims=self.sim.model.jnt_range[:6,1]
+        vel_lower_lims=-math.pi/4*np.ones(6)
+        vel_upper_lims=math.pi/4*np.ones(6)
+
+        objective = cp.Minimize(cp.sum_squares(u-tau))
+        constraints.append(mass_matrix@vdot+self.fbias==u+self.endeffector_force())
+        constraints.append(vel_lower_lims <= vdot*self.dt+qdot_prev)
+        constraints.append(vel_lower_lims <= vdot*self.dt+qdot_prev)
+        constraints.append(vel_upper_lims >= vdot*self.dt+qdot_prev)
+        constraints.append(pos_lower_lims <= vdot*self.dt**2+qdot_prev*self.dt+q_prev)
+        constraints.append(pos_upper_lims >= vdot*self.dt**2+qdot_prev*self.dt+q_prev)        
+        prob = cp.Problem(objective, constraints)
+        try:
+            result = prob.solve(verbose=False)
+
+            for i in range(6):
+                self.sim.data.ctrl[i]=u.value[i]
+        except:
+            pass
