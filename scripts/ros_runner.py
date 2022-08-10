@@ -9,11 +9,24 @@ from robosuite.controllers.osc import OperationalSpaceController as osc
 from qp_opt import qp_opt
 import math
 from utils import butter_lowpass_filter
+import rospy
+from std_msgs.msg import String
+from sensor_msgs.msg import JointState
+from ros_utils import ur_controllers
+import time
+
+## Setup subscripers and publishers ##
+ctrl=ur_controllers()
+rospy.init_node('ros_ctrl') 
+pub = rospy.Publisher("/ur_hardware_interface/script_command", String, queue_size=1)
+substates = rospy.Subscriber("/joint_states", JointState, ctrl.jstate_in)
+# subpub = rospy.Subscriber("/ur_hardware_interface/script_command", String, ctrl.msgs_published)
+
 
 ## Setup Mujoco Sim Node ##
 mj_sim=mj_node()
 
-view=True
+view=False
 if view==True:
     viewer=MjViewer(mj_sim.sim)
 
@@ -21,9 +34,17 @@ if view==True:
 F_des=np.array([0,0,0,0,0,0],dtype=np.float64)     # Desired force in ee frame
 qp=qp_opt(mj_sim.sim,F_des=F_des,optimize=True,hybrid=False)
 
+while pub.get_num_connections()==0:
+    time.sleep(0.5)
+
+ctrl.movej(mj_sim.init_joints,pub)
+
+
+
 q_opt=[]
 tau_0=[]
-while mj_sim.sim.data.time<15:
+count=0
+while mj_sim.sim.data.time<10:
 
     # ## Run the QP optimizer ##
     q_out=qp.run_opt()
@@ -33,6 +54,15 @@ while mj_sim.sim.data.time<15:
 
     q_opt.append([pos for pos in mj_sim.sim.data.qvel[:6]])
     tau_0.append([pos for pos in mj_sim.sim.data.sensordata[:3]])
+    if count==20:
+        ctrl.movej(mj_sim.sim.data.qpos[:6],pub)
+        # ctrl.servoj(mj_sim.sim.data.qpos[:6],pub)
+        while np.max(abs(mj_sim.sim.data.qpos[:6]-ctrl.jstate))>0.05:
+            pass
+
+        count=0
+    else:
+        count+=1
 
     if view==True:
         viewer.render()

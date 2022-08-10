@@ -6,7 +6,7 @@ import cvxpy as cp
 import math
 
 class qp_opt():
-    def __init__(self,sim,F_des=np.zeros(6),optimize=True):
+    def __init__(self,sim,F_des=np.zeros(6),optimize=True,hybrid=False):
         self.sim=sim
         self.ee_site='mep:ee'
         self.target_site='wpt1'
@@ -23,11 +23,12 @@ class qp_opt():
         Jin=np.vstack((np.reshape(self.sim.data.get_site_jacp(self.ee_site)[:],(3,-1)),np.reshape(self.sim.data.get_site_jacr(self.ee_site)[:],(3,-1))))
         self.J_prev=Jin[:6,:6]
         self.dt=sim.model.opt.timestep
-        self.kp=np.array([150,150,150,150,150,150])
-        self.kd=np.array([60,60,60,60,60,60])
+        self.kp=np.array([20,150,150,150,150,150])
+        self.kd=np.array([10,60,60,60,60,60])
         self.contact_count=0
         self.F_des=-F_des
         self.optimize=optimize
+        self.hybrid=hybrid
   
     def run_opt(self):
 
@@ -77,7 +78,7 @@ class qp_opt():
 
         self.Xdes=np.diag(self.kp)@position_err+np.diag(self.kd)@velocity_err
 
-        tau = self.force_control(hybrid=True,F_des=self.F_des)
+        tau = self.force_control(hybrid=self.hybrid,F_des=self.F_des)
         for i in range(6):
             self.sim.data.ctrl[i]=tau[i]
 
