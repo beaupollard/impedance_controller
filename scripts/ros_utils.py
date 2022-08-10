@@ -32,13 +32,13 @@ class ur_controllers():
         pub.publish(new_msg)
         self.new_msg=new_msg
 
-    def servoj(self,q,pub,t=0.008,lookahead=0.1,gain=300):
+    def servoj(self,q,pub,t=0.05,lookahead=0.1,gain=300):
         new_msg = String()
         cmd_str="servoj(["
         for i in q:
             cmd_str=cmd_str+str(i)+","
 
-        cmd_str=cmd_str[:-1]+"], 0, 0,"+str(t)+", "+str(lookahead)+", "+str(gain)+")"
+        cmd_str=cmd_str[:-1]+"], a=0, v=0,t="+str(t)+", lookahead_time="+str(lookahead)+", gain="+str(gain)+")"
         new_msg.data=cmd_str
         pub.publish(new_msg)
         self.new_msg=new_msg

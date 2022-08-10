@@ -18,15 +18,15 @@ import time
 ## Setup subscripers and publishers ##
 ctrl=ur_controllers()
 rospy.init_node('ros_ctrl') 
-pub = rospy.Publisher("/ur_hardware_interface/script_command", String, queue_size=1)
-substates = rospy.Subscriber("/joint_states", JointState, ctrl.jstate_in)
+pub = rospy.Publisher("/left/ur_hardware_interface/script_command", String, queue_size=1)
+substates = rospy.Subscriber("/left/joint_states", JointState, ctrl.jstate_in)
 # subpub = rospy.Subscriber("/ur_hardware_interface/script_command", String, ctrl.msgs_published)
-
+commands = []
 
 ## Setup Mujoco Sim Node ##
 mj_sim=mj_node()
 
-view=False
+view=True
 if view==True:
     viewer=MjViewer(mj_sim.sim)
 
@@ -38,6 +38,8 @@ while pub.get_num_connections()==0:
     time.sleep(0.5)
 
 ctrl.movej(mj_sim.init_joints,pub)
+commands.append(mj_sim.init_joints)
+time.sleep(2)
 
 
 
@@ -54,20 +56,24 @@ while mj_sim.sim.data.time<10:
 
     q_opt.append([pos for pos in mj_sim.sim.data.qvel[:6]])
     tau_0.append([pos for pos in mj_sim.sim.data.sensordata[:3]])
-    if count==20:
-        ctrl.movej(mj_sim.sim.data.qpos[:6],pub)
-        # ctrl.servoj(mj_sim.sim.data.qpos[:6],pub)
-        while np.max(abs(mj_sim.sim.data.qpos[:6]-ctrl.jstate))>0.05:
-            pass
+    ctrl.servoj(mj_sim.sim.data.qpos[:6],pub)
+    # if count==2:
+    #     # if np.max(abs(mj_sim.sim.data.qpos[:6]-ctrl.jstate))<0.05:
+    #     # ctrl.servoj(mj_sim.sim.data.qpos[:6],pub)
+    #     commands.append(mj_sim.sim.data.qpos[:6])
+    #     # ctrl.servoj(mj_sim.sim.data.qpos[:6],pub)
+    #     # while np.max(abs(mj_sim.sim.data.qpos[:6]-ctrl.jstate))>0.05:
+    #     #     pass
 
-        count=0
-    else:
-        count+=1
+    #     count=0
+    # else:
+    #     count+=1
 
     if view==True:
         viewer.render()
 
 t0=np.array(tau_0)
 q0=np.array(q_opt)*180/math.pi
+np.savez('./commands.npz',commands=commands)
 
 y=butter_lowpass_filter(t0[:,2],10,1/mj_sim.sim.model.opt.timestep,5)

@@ -23,8 +23,8 @@ class qp_opt():
         Jin=np.vstack((np.reshape(self.sim.data.get_site_jacp(self.ee_site)[:],(3,-1)),np.reshape(self.sim.data.get_site_jacr(self.ee_site)[:],(3,-1))))
         self.J_prev=Jin[:6,:6]
         self.dt=sim.model.opt.timestep
-        self.kp=np.array([20,150,150,150,150,150])
-        self.kd=np.array([10,60,60,60,60,60])
+        self.kp=np.array([100,120,120,120,120,120])
+        self.kd=np.array([40,60,60,60,60,60])
         self.contact_count=0
         self.F_des=-F_des
         self.optimize=optimize
@@ -173,7 +173,7 @@ class qp_opt():
         constraints.append(pos_upper_lims >= vdot*self.dt**2+qdot_prev*self.dt+q_prev)        
         prob = cp.Problem(objective, constraints)
         try:
-            result = prob.solve(verbose=False)
+            result = prob.solve(solve='MOSEK', verbose=False)
 
             for i in range(6):
                 self.sim.data.ctrl[i]=u.value[i]
