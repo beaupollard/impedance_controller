@@ -18,12 +18,12 @@ if view==True:
     viewer=MjViewer(mj_sim.sim)
 
 ## Setup Controller ##
-F_des=np.array([0,0,0,0,0,0],dtype=np.float64)     # Desired force in ee frame
-qp=qp_opt(mj_sim.sim,F_des=F_des,optimize=True,hybrid=False)
+F_des=np.array([0,0,10,0,0,0],dtype=np.float64)     # Desired force in ee frame
+qp=qp_opt(mj_sim.sim,F_des=F_des,optimize=True,hybrid=True)
 
 q_opt=[]
 tau_0=[]
-while mj_sim.sim.data.time<15:
+while mj_sim.sim.data.time<20:
 
     # ## Run the QP optimizer ##
     q_out=qp.run_opt()

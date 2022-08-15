@@ -12,6 +12,10 @@ def butter_lowpass(cutoff, fs, order=5):
 def butter_lowpass_filter(data, cutoff, fs, order=5):
     b, a = butter_lowpass(cutoff, fs, order=order)
     y = lfilter(b, a, data)
-    plt.plot(y)
+    t=np.linspace(0,len(y)/fs,len(y))
+    plt.rcParams.update({'font.size': 22})
+    plt.plot(t,y,linewidth=4)
+    plt.xlabel('Time (s)')
+    plt.ylabel('Force (N)')
     plt.show()
     return y

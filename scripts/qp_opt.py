@@ -10,7 +10,7 @@ class qp_opt():
         self.sim=sim
         self.ee_site='mep:ee'
         self.target_site='wpt1'
-        self.pegmass=self.sim.model.body_mass[self.sim.model.body_name2id('peg')]
+        self.pegmass=self.sim.model.body_mass[self.sim.model.body_name2id('peg')]+self.sim.model.body_mass[self.sim.model.body_name2id('peg_base')]
         self.acc_index=self.sim.model.sensor_adr[self.sim.model.sensor_name2id('acc')]
         self.force_index=self.sim.model.sensor_adr[self.sim.model.sensor_name2id('force_sensor')]
         self.torque_index=self.sim.model.sensor_adr[self.sim.model.sensor_name2id('torque_sensor')]
@@ -29,6 +29,10 @@ class qp_opt():
         self.F_des=-F_des
         self.optimize=optimize
         self.hybrid=hybrid
+        self.force_error_prev=np.zeros(6)
+        self.kp_err=1.5*np.ones(6)
+        self.kd_err=1*np.ones(6)
+        self.ki_err=0.0*np.ones(6)
   
     def run_opt(self):
 
@@ -103,7 +107,7 @@ class qp_opt():
     def endeffector_force(self):
         bias=self.pegmass*self.sim.data.sensordata[self.acc_index:self.acc_index+3]
         Fx=self.sim.data.sensordata[self.force_index:self.force_index+3]-bias
-        Tx=self.sim.data.sensordata[self.torque_index:self.torque_index+3]
+        Tx=0*self.sim.data.sensordata[self.torque_index:self.torque_index+3]
         R=self.sim.data.get_site_xmat(self.ee_site)
         Fext=-np.concatenate((np.linalg.inv(R)@Fx,np.linalg.inv(R)@Tx))
         return Fext
@@ -118,6 +122,7 @@ class qp_opt():
         if np.linalg.norm(F_ext)<10**(-10):
             hybrid=False
             self.contact_count=0
+            self.int_err=np.zeros(6)
         else:
             self.contact_count+=1
 
@@ -135,8 +140,11 @@ class qp_opt():
             omegabar_t=Sf.T@np.diag(sigma_bar[3:])
             # desired_wrench_force=np.concatenate((self.lambda_pos@omegabar_f@F_des[:3],self.lambda_ori@omegabar_t@F_des[3:]))
             desired_wrench_force=np.concatenate((omegabar_f@F_des[:3],omegabar_t@F_des[3:]))
-            Force_err=F_ext-np.concatenate((Sf.T@F_des[:3],Sf.T@F_des[3:6]))
-            tau_force=np.transpose(self.J)@(desired_wrench_pos+desired_wrench_force-Force_err)+self.fbias
+            force_err=F_ext-np.concatenate((Sf.T@F_des[:3],Sf.T@F_des[3:6]))
+            dforce_errdt=(force_err-self.force_error_prev)
+            err_des=np.diag(self.kp_err)@force_err+np.diag(self.kd_err)@dforce_errdt+np.diag(self.ki_err)@self.int_err
+            self.force_error_prev=force_err
+            tau_force=np.transpose(self.J)@(desired_wrench_pos+desired_wrench_force-err_des)+self.fbias
             if self.contact_count<buffer:
                 tau=(1-self.contact_count/buffer)*tau_pos+self.contact_count/buffer*(tau_force)
             else:
@@ -144,6 +152,7 @@ class qp_opt():
                 # inp[0]=-2
                 # tau=np.transpose(self.J)@inp+self.fbias
                 tau=tau_force
+                self.int_err=self.int_err+err_des
         else:
             tau=np.transpose(self.J)@(desired_wrench)+self.fbias
 

@@ -13,7 +13,7 @@ import rospkg
 
 class mj_node():
     def __init__(self):
-        path='/home/yashas/Documents/cmu/impedance_controller'
+        path='/home/beau/Documents/ws_moveit/src/HIL'
         name=path+'/assets/ur3e/ur3e_dislodge.xml'
         # name=path+'/assets/ur3e/ur3e_wallv2.xml'
         model  = load_model_from_path(name)
