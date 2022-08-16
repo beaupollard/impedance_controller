@@ -22,7 +22,7 @@ F_des=np.array([0,0,6,0,0,0],dtype=np.float64)     # Desired force in ee frame
 nozzle_name=['peg_base','nozzle','nozzle0','nozzle45','nozzle90','nozzle135','nozzle180','nozzle225','nozzle270','nozzle315']
 peg_name=['ur16_pegbase','ur16_peg']
 qp_ur3=qp_opt(mj_sim.sim,F_des=F_des,optimize=False,hybrid=False,ee_site='ur3:ee',target_site='wpt1',qvel_index=np.array([0,1,2,3,4,5]),peg_name=nozzle_name)
-qp_ur16=qp_opt(mj_sim.sim,F_des=F_des,optimize=False,hybrid=True,ee_site='ur16:ee',target_site='wpt2',qvel_index=6+np.array([0,1,2,3,4,5]),peg_name=peg_name)
+qp_ur16=qp_opt(mj_sim.sim,F_des=F_des,optimize=False,hybrid=False,ee_site='ur16:ee',target_site='wpt2',qvel_index=6+np.array([0,1,2,3,4,5]),peg_name=peg_name)
 qp_ur3.kp=np.array([40,120,120,120,120,120])
 qp_ur3.kd=np.array([25,100,100,100,100,100])
 qp_ur16.kp=np.array([100,300,300,300,300,300])
