@@ -144,7 +144,9 @@ class qp_opt():
             desired_wrench_force=np.concatenate((omegabar_f@F_des[:3],omegabar_t@F_des[3:]))
             force_err=F_ext-np.concatenate((Sf.T@F_des[:3],Sf.T@F_des[3:6]))
             dforce_errdt=(force_err-self.force_error_prev)
-            err_des=np.diag(self.kp_err)@force_err+np.diag(self.kd_err)@dforce_errdt+np.diag(self.ki_err)@self.int_err
+            err_des=force_err#np.diag(self.kp_err)@force_err+np.diag(self.kd_err)@dforce_errdt#+np.diag(self.ki_err)@self.int_err
+            if self.sim.data.time>10:
+                err_des=0*force_err
             self.force_error_prev=force_err
             tau_force=np.transpose(self.J)@(desired_wrench_pos+desired_wrench_force-err_des)+self.fbias
             if self.contact_count<buffer:
@@ -154,7 +156,7 @@ class qp_opt():
                 # inp[0]=-2
                 # tau=np.transpose(self.J)@inp+self.fbias
                 tau=tau_force
-                self.int_err=self.int_err+err_des
+                # self.int_err=self.int_err+err_des
         else:
             tau=np.transpose(self.J)@(desired_wrench)+self.fbias
 
