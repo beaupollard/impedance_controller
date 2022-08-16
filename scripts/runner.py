@@ -18,15 +18,20 @@ if view==True:
     viewer=MjViewer(mj_sim.sim)
 
 ## Setup Controller ##
-F_des=np.array([0,0,10,0,0,0],dtype=np.float64)     # Desired force in ee frame
-qp=qp_opt(mj_sim.sim,F_des=F_des,optimize=True,hybrid=True)
-
+F_des=np.array([0,0,0,0,0,0],dtype=np.float64)     # Desired force in ee frame
+qp_ur3=qp_opt(mj_sim.sim,F_des=F_des,optimize=False,hybrid=False,ee_site='ur3:ee',target_site='wpt1',qvel_index=np.array([0,1,2,3,4,5]),peg_name=['peg_base'])
+qp_ur16=qp_opt(mj_sim.sim,F_des=F_des,optimize=False,hybrid=False,ee_site='ur16:ee',target_site='wpt2',qvel_index=6+np.array([0,1,2,3,4,5]),peg_name=['ur16_peg'])
+# qp_ur3.kp=np.array([120,120,120,120,120,120])
+# qp_ur3.kd=np.array([100,100,100,100,100,100])
+qp_ur16.kp=np.array([300,300,300,300,300,300])
+qp_ur16.kd=np.array([200,200,200,200,200,200])
 q_opt=[]
 tau_0=[]
 while mj_sim.sim.data.time<20:
-
+    # mj_sim.sim.data.ctrl[:]=0
     # ## Run the QP optimizer ##
-    q_out=qp.run_opt()
+    q_out=qp_ur3.run_opt()
+    q_out2=qp_ur16.run_opt()
 
     ## Step Mujoco Forward ##
     mj_sim.sim.step()

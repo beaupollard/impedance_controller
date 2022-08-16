@@ -6,25 +6,28 @@ import cvxpy as cp
 import math
 
 class qp_opt():
-    def __init__(self,sim,F_des=np.zeros(6),optimize=True,hybrid=False):
+    def __init__(self,sim,F_des=np.zeros(6),optimize=True,hybrid=False,ee_site='mep:ee',target_site='wpt1',qvel_index=np.array([0,1,2,3,4,5]),peg_name=['peg','peg_base'],kp=np.array([100,120,120,120,120,120]),kd=np.array([40,60,60,60,60,60])):
         self.sim=sim
-        self.ee_site='mep:ee'
-        self.target_site='wpt1'
-        self.pegmass=self.sim.model.body_mass[self.sim.model.body_name2id('peg')]+self.sim.model.body_mass[self.sim.model.body_name2id('peg_base')]
+        self.ee_site=ee_site
+        self.target_site=target_site
+        self.pegmass=0
+        for i in peg_name:
+            self.pegmass+=self.sim.model.body_mass[self.sim.model.body_name2id(i)]
         self.acc_index=self.sim.model.sensor_adr[self.sim.model.sensor_name2id('acc')]
         self.force_index=self.sim.model.sensor_adr[self.sim.model.sensor_name2id('force_sensor')]
         self.torque_index=self.sim.model.sensor_adr[self.sim.model.sensor_name2id('torque_sensor')]
-        self.qvel_index=np.array([0,1,2,3,4,5])
+        self.qvel_index=qvel_index
         self.vdot = cp.Variable(len(self.sim.data.qacc[:6]))
-        self.pos_lower_lims=self.sim.model.jnt_range[:6,0]
-        self.pos_upper_lims=self.sim.model.jnt_range[:6,1]
+        self.pos_lower_lims=self.sim.model.jnt_range[qvel_index,0]
+        self.pos_upper_lims=self.sim.model.jnt_range[qvel_index,1]
         self.vel_lower_lims=-math.pi*np.ones(6)
         self.vel_upper_lims=math.pi*np.ones(6)
-        Jin=np.vstack((np.reshape(self.sim.data.get_site_jacp(self.ee_site)[:],(3,-1)),np.reshape(self.sim.data.get_site_jacr(self.ee_site)[:],(3,-1))))
-        self.J_prev=Jin[:6,:6]
+        J_ori=np.array(self.sim.data.get_site_jacr(self.ee_site).reshape((3, -1))[:, self.qvel_index])     
+        J_pos=np.array(self.sim.data.get_site_jacp(self.ee_site).reshape((3, -1))[:, self.qvel_index])          
+        self.J_prev=np.array(np.vstack([J_pos, J_ori])) 
         self.dt=sim.model.opt.timestep
-        self.kp=np.array([100,120,120,120,120,120])
-        self.kd=np.array([40,60,60,60,60,60])
+        self.kp=kp
+        self.kd=kd
         self.contact_count=0
         self.F_des=-F_des
         self.optimize=optimize
@@ -36,8 +39,6 @@ class qp_opt():
   
     def run_opt(self):
 
-        self.F_des[2]=-(abs(6/1.59*self.sim.data.qpos[-1])+2)
-
         ## Get Jacobian of end effector ##
         J_ori=np.array(self.sim.data.get_site_jacr(self.ee_site).reshape((3, -1))[:, self.qvel_index])     
         J_pos=np.array(self.sim.data.get_site_jacp(self.ee_site).reshape((3, -1))[:, self.qvel_index])  
@@ -46,14 +47,15 @@ class qp_opt():
         Jinv = np.linalg.pinv(self.J)
 
         ## Get bias terms (coriollis/gravity) ##
-        self.fbias=self.sim.data.qfrc_bias[:6]
+        self.fbias=self.sim.data.qfrc_bias[self.qvel_index]
 
         ## Get full mass matrix ##
         rc=len(self.sim.data.qvel)
         mm = np.ndarray(shape=(rc ** 2,), dtype=np.float64, order='C')
-        mujoco_py.cymj._mj_fullM(self.sim.model, mm, self.sim.data.qM)
+        # mujoco_py.cymj._mj_fullM(self.sim.model, mm, self.sim.data.qM)
+        mujoco_py.functions.mj_fullM(self.sim.model, mm, self.sim.data.qM)
         mm=np.reshape(mm, (rc, rc))
-        mass_matrix=mm[:6,:6]
+        mass_matrix=mm[self.qvel_index[0]:self.qvel_index[-1]+1,self.qvel_index[0]:self.qvel_index[-1]+1]
 
         dJdt=(self.J-self.J_prev)/self.dt
 
@@ -83,8 +85,8 @@ class qp_opt():
         self.Xdes=np.diag(self.kp)@position_err+np.diag(self.kd)@velocity_err
 
         tau = self.force_control(hybrid=self.hybrid,F_des=self.F_des)
-        for i in range(6):
-            self.sim.data.ctrl[i]=tau[i]
+        for i in range(len(self.qvel_index)):
+            self.sim.data.ctrl[self.qvel_index[i]]=tau[i]
 
         ## Run Convex QP Optimizer to satisfy constraints ## 
         if self.optimize==True:
@@ -161,15 +163,15 @@ class qp_opt():
 
     def QP_opt(self,tau,mass_matrix):
         ## QP Optimizer ##
-        qdot_prev=self.sim.data.qvel[:6]
-        q_prev=self.sim.data.qpos[:6]
+        qdot_prev=self.sim.data.qvel[self.qvel_index]
+        q_prev=self.sim.data.qpos[self.qvel_index]
 
         # Construct the problem.
         constraints=[]
-        vdot = cp.Variable(len(self.sim.data.qacc[:6]))
-        u = cp.Variable(len(self.sim.data.qacc[:6]))
-        pos_lower_lims=self.sim.model.jnt_range[:6,0]
-        pos_upper_lims=self.sim.model.jnt_range[:6,1]
+        vdot = cp.Variable(len(self.sim.data.qacc[self.qvel_index]))
+        u = cp.Variable(len(self.sim.data.qacc[self.qvel_index]))
+        pos_lower_lims=self.sim.model.jnt_range[self.qvel_index,0]
+        pos_upper_lims=self.sim.model.jnt_range[self.qvel_index,1]
         vel_lower_lims=-math.pi/4*np.ones(6)
         vel_upper_lims=math.pi/4*np.ones(6)
 
@@ -185,6 +187,6 @@ class qp_opt():
             result = prob.solve(solve='MOSEK', verbose=False)
 
             for i in range(6):
-                self.sim.data.ctrl[i]=u.value[i]
+                self.sim.data.ctrl[self.qvel_index[i]]=u.value[i]
         except:
             pass
