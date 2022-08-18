@@ -29,7 +29,7 @@ class qp_opt():
         self.kp=kp
         self.kd=kd
         self.contact_count=0
-        self.F_des=-F_des
+        self.F_des=F_des
         self.optimize=optimize
         self.hybrid=hybrid
         self.force_error_prev=np.zeros(6)
@@ -132,21 +132,29 @@ class qp_opt():
             ## Get into end effector frame ##
             sigma=np.zeros(6)
             sigma[np.where(F_des==0)]=1
+            # sigma=np.ones(6)
             sigma_bar=np.ones(6)-sigma
             Sf=self.sim.data.get_site_xmat(self.ee_site)
-            omega_f=Sf.T@np.diag(sigma[:3])@Sf
-            omega_t=Sf.T@np.diag(sigma[3:])@Sf
-            # desired_wrench_pos=np.concatenate((self.lambda_pos@omega_f@self.Xdes[:3],self.lambda_ori@omega_t@self.Xdes[3:]))
+            # omega_f=Sf.T@np.diag(sigma[:3])@Sf
+            # omega_t=Sf.T@np.diag(sigma[3:])@Sf         
+            omega_f=Sf@np.diag(sigma[:3])@Sf.T
+            omega_t=Sf@np.diag(sigma[3:])@Sf.T
+
             desired_wrench_pos=np.concatenate((self.lambda_pos@omega_f@self.Xdes[:3],self.lambda_ori@omega_t@self.Xdes[3:]))
-            omegabar_f=Sf.T@np.diag(sigma_bar[:3])
-            omegabar_t=Sf.T@np.diag(sigma_bar[3:])
+            # omegabar_f=Sf.T@np.diag(sigma_bar[:3])
+            # omegabar_t=Sf.T@np.diag(sigma_bar[3:])
+            omegabar_f=Sf@np.diag(sigma_bar[:3])
+            omegabar_t=Sf@np.diag(sigma_bar[3:])
             # desired_wrench_force=np.concatenate((self.lambda_pos@omegabar_f@F_des[:3],self.lambda_ori@omegabar_t@F_des[3:]))
             desired_wrench_force=np.concatenate((omegabar_f@F_des[:3],omegabar_t@F_des[3:]))
-            force_err=F_ext-np.concatenate((Sf.T@F_des[:3],Sf.T@F_des[3:6]))
+            # force_err=0*np.concatenate((Sf.T@(-Sf@F_ext[:3]-F_des[:3]),np.zeros(3)))#0*(F_ext-np.concatenate((Sf.T@F_des[:3]@Sf,Sf.T@F_des[3:6]@Sf)))
+            force_err=0*np.concatenate((Sf@(np.diag(sigma_bar[:3])@(-Sf@F_ext[:3]-F_des[:3])),np.zeros(3)))
             dforce_errdt=(force_err-self.force_error_prev)
             err_des=force_err#np.diag(self.kp_err)@force_err+np.diag(self.kd_err)@dforce_errdt#+np.diag(self.ki_err)@self.int_err
-            if self.sim.data.time>10:
-                err_des=0*force_err
+            # if self.sim.data.time>8:
+            #     err_des=1*force_err
+            # if self.contact_count>buffer:
+            #     desired_wrench_pos[0]=0
             self.force_error_prev=force_err
             tau_force=np.transpose(self.J)@(desired_wrench_pos+desired_wrench_force-err_des)+self.fbias
             if self.contact_count<buffer:
