@@ -36,13 +36,13 @@ if view==True:
     viewer.cam.fixedcamid = 0 
 
 ## Setup Controller ##
-F_des=np.array([0,0,5,0,0,0],dtype=np.float64)
+F_des=np.array([0,0,12,0,0,0],dtype=np.float64)
 nozzle_name=['peg_base','nozzle','nozzle0','nozzle45','nozzle90','nozzle135','nozzle180','nozzle225','nozzle270','nozzle315']
 peg_name=['ur16_pegbase','ur16_peg']
 qp_ur3=qp_opt(mj_sim.sim,F_des=F_des,optimize=False,hybrid=False,ee_site='ur3:ee',target_site='wpt1',qvel_index=np.array([0,1,2,3,4,5]),peg_name=nozzle_name)
 qp_ur16=qp_opt(mj_sim.sim,F_des=F_des,optimize=False,hybrid=True,ee_site='ur16:ee',target_site='wpt2',qvel_index=6+np.array([0,1,2,3,4,5]),peg_name=peg_name)
-qp_ur3.kp=np.array([40,150,150,150,150,150])
-qp_ur3.kd=np.array([10,150,150,150,150,150])
+qp_ur3.kp=np.array([60,150,150,150,150,150])
+qp_ur3.kd=np.array([60,150,150,150,150,150])
 qp_ur16.kp=np.array([300,300,300,300,300,300])
 qp_ur16.kd=np.array([200,200,200,200,200,200])
 qp_ur16.acc_index=mj_sim.sim.model.sensor_adr[mj_sim.sim.model.sensor_name2id('ur16_acc')]

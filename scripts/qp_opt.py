@@ -128,7 +128,7 @@ class qp_opt():
         else:
             self.contact_count+=1
 
-        if hybrid==True:
+        if hybrid==True:          
             ## Get into end effector frame ##
             sigma=np.zeros(6)
             sigma[np.where(F_des==0)]=1
@@ -148,9 +148,9 @@ class qp_opt():
             # desired_wrench_force=np.concatenate((self.lambda_pos@omegabar_f@F_des[:3],self.lambda_ori@omegabar_t@F_des[3:]))
             desired_wrench_force=np.concatenate((omegabar_f@F_des[:3],omegabar_t@F_des[3:]))
             # force_err=0*np.concatenate((Sf.T@(-Sf@F_ext[:3]-F_des[:3]),np.zeros(3)))#0*(F_ext-np.concatenate((Sf.T@F_des[:3]@Sf,Sf.T@F_des[3:6]@Sf)))
-            force_err=0*np.concatenate((Sf@(np.diag(sigma_bar[:3])@(-Sf@F_ext[:3]-F_des[:3])),np.zeros(3)))
-            dforce_errdt=(force_err-self.force_error_prev)
-            err_des=force_err#np.diag(self.kp_err)@force_err+np.diag(self.kd_err)@dforce_errdt#+np.diag(self.ki_err)@self.int_err
+            force_err=3.0*np.concatenate((Sf@(np.diag(sigma_bar[:3])@(Sf.T@F_ext[:3]-F_des[:3])),np.zeros(3)))
+            dforce_errdt=0.1*(force_err-self.force_error_prev)
+            err_des=force_err#+dforce_errdt#np.diag(self.kp_err)@force_err+np.diag(self.kd_err)@dforce_errdt#+np.diag(self.ki_err)@self.int_err
             # if self.sim.data.time>8:
             #     err_des=1*force_err
             # if self.contact_count>buffer:

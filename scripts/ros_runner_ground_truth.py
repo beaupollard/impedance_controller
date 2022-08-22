@@ -36,7 +36,7 @@ if view==True:
     viewer.cam.fixedcamid = 0 
 
 ## Setup Controller ##
-F_des=np.array([0,0,7.4,0,0,0],dtype=np.float64)
+F_des=np.array([0,0,17.6,0,0,0],dtype=np.float64)
 nozzle_name=['peg_base','nozzle','nozzle0','nozzle45','nozzle90','nozzle135','nozzle180','nozzle225','nozzle270','nozzle315']
 peg_name=['ur16_pegbase','ur16_peg']
 qp_ur16=qp_opt(mj_sim.sim,F_des=F_des,optimize=False,hybrid=True,ee_site='ur16:ee',target_site='wpt2',qvel_index=np.array([0,1,2,3,4,5]),peg_name=peg_name)
