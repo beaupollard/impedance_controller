@@ -1,0 +1,127 @@
+<mujoco model="ur3e_robot">
+    <compiler angle="radian" />
+    <size njmax="500" nconmax="100" />
+    <asset>
+        <texture type="skybox" builtin="gradient" rgb1="1 1 1" rgb2="0 0 0" width="512" height="512"/>
+        <texture name="texplane" type="2d" builtin="checker" rgb1=".25 .25 1" rgb2=".85 .85 .85" width="512" height="512" mark="cross" markrgb=".8 .8 .8"/>
+        <material name="matplane" reflectance="0.3" texture="texplane" texrepeat="1 1" texuniform="true"/>
+        <mesh name="ur3_base" file="ur3e/base.stl" />
+        <mesh name="ur3_shoulder" file="ur3e/shoulder.stl" />
+        <mesh name="ur3_upperarm" file="ur3e/upperarm.stl" />
+        <mesh name="ur3_forearm" file="ur3e/forearm.stl" />
+        <mesh name="ur3_wrist1" file="ur3e/wrist1.stl" />
+        <mesh name="ur3_wrist2" file="ur3e/wrist2.stl" />
+        <mesh name="ur3_wrist3" file="ur3e/wrist3.stl" />
+        <mesh name="oct_nozzle" file="meshes/nozzle_convex_primitive.STL"/>
+        <mesh name="2nozzle" file="meshes/Nozzle.STL" scale="0.001 0.001 0.001"/>
+        <mesh name="3nozzle" file="meshes/Nozzle2.STL" />
+        <mesh name="Mounting_Plate" file="meshes/Mounting_Plate.STL"/>
+        <mesh name="peg2" file="meshes/Peg.STL"/>
+    </asset>
+    <option 
+        timestep="0.01" integrator="RK4">
+    </option>
+	<actuator>
+		<motor gear="1.0" joint="ur3_shoulder_pan_joint" name="ur3_shoulder_pan_joint" ctrllimited="true" ctrlrange="-100 100"/>
+		<motor gear="1.0" joint="ur3_shoulder_lift_joint" name="ur3_shoulder_lift_joint" ctrllimited="true" ctrlrange="-100 100"/>
+		<motor gear="1.0" joint="ur3_elbow_joint" name="ur3_elbow_joint" ctrllimited="true" ctrlrange="-100 100"/>
+		<motor gear="1.0" joint="ur3_wrist_1_joint" name="ur3_wrist_1_joint" ctrllimited="true" ctrlrange="-100 100"/>
+        <motor gear="1.0" joint="ur3_wrist_2_joint" name="ur3_wrist_2_joint" ctrllimited="true" ctrlrange="-100 100"/>
+        <motor gear="1.0" joint="ur3_wrist_3_joint" name="ur3_wrist_3_joint" ctrllimited="true" ctrlrange="-100 100"/>
+        <!-- <motor gear="1.0" joint="joint:2" name="bact"/> -->
+	</actuator>    
+    <sensor>
+        <force name='force_sensor' site='force_sensor'/>
+        <torque name='torque_sensor' site='torque_sensor'/>
+        <accelerometer name='acc' site='acc'/>
+    </sensor>
+    <worldbody>
+    <!-- <camera name="bodyhigh2" pos="0 0 1.5" quat="0 0 0.382683 0 0.923876"/> -->
+    <!-- <camera name="bodyhigh2" pos="0 0 1.5" quat="0 0.923876 0 0.382683"/> -->
+        <geom quat="0 0 0 1" type="mesh" rgba="0.7 0.7 0.7 1" mesh="ur3_base" name="ur3_base"/>
+        <body name="ur3_shoulder_link" pos="0 0 0.15285" quat="0 0 0 1">
+            <inertial pos="0 0 0" mass="2" diaginertia="0.00809316 0.00809316 0.005625" />
+            <joint name="ur3_shoulder_pan_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-6.28319 6.28319" />
+            <geom quat="0 0 0 1" type="mesh" rgba="0.7 0.7 0.7 1" mesh="ur3_shoulder" name="ur3_shoulder"/>
+            <body name="ur3_upper_arm_link" pos="0 0 0" quat="0.707107 0.707107 0 0">
+                <inertial pos="-0.121825 0 0.12" quat="0.707107 0 0.707107 0" mass="3.42" diaginertia="0.0217285 0.0217285 0.00961875" />
+                <joint name="ur3_shoulder_lift_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-6.28319 6.28319" />
+                <!-- <joint name="shoulder_lift_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-1.4544168120244623 -1.40" /> -->
+                <geom pos="0 0 0.12" quat="0.5 0.5 -0.5 -0.5" type="mesh" rgba="0.7 0.7 0.7 1" mesh="ur3_upperarm" name="ur3_upperarm" />
+                <body name="ur3_forearm_link" pos="-0.24355 0 0">
+                    <inertial pos="-0.1066 0 0.027" quat="0.707107 0 0.707107 0" mass="1.26" diaginertia="0.00654457 0.00654457 0.00354375" />
+                    <joint name="ur3_elbow_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-3.14159 3.14159" />
+                    <!-- <joint name="elbow_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-1.7540615253663132 -1.70" /> -->
+                    <geom pos="0 0 0.027" quat="0.5 0.5 -0.5 -0.5" type="mesh" rgba="0.7 0.7 0.7 1" mesh="ur3_forearm" name="ur3_forearm" />
+                    <body name="ur3_wrist_1_link" pos="-0.2132 0 0.13105">
+                        <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="0.8" diaginertia="0.00225 0.002085 0.002085" />
+                        <joint name="ur3_wrist_1_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-6.28319 6.28319" />
+                        <!-- <joint name="wrist_1_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-3.067826543422323 -2.9" /> -->
+                        <geom pos="0 0 -0.104" quat="0.707107 0.707107 0 0" type="mesh" rgba="0.7 0.7 0.7 1" mesh="ur3_wrist1" name="ur3_wrist1" />
+                        <body name="ur3_wrist_2_link" pos="0 -0.08535 -1.75056e-11" quat="0.707107 0.707107 0 0">
+                            <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="0.8" diaginertia="0.00225 0.002085 0.002085" />
+                            <joint name="ur3_wrist_2_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-6.28319 6.28319" />
+                            <!-- <joint name="wrist_2_joint" pos="0 0 0" axis="0 0 1" limited="true" range="0.10 0.11940037001951656" />  -->
+                            <geom pos="0 0 -0.08535" type="mesh" rgba="0.7 0.7 0.7 1" mesh="ur3_wrist2" name="ur3_wrist2"/>
+                            <body name="ur3_wrist_3_link" pos="0 0.0921 -1.889e-11" quat="0.707107 -0.707107 0 0">
+                                <inertial pos="0 0 -0.02" quat="0.5 0.5 -0.5 0.5" mass="0.35" diaginertia="0.0001792 0.000136267 0.000136267" />
+                                <!-- <joint name="wrist_3_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-1.588058798181077 -1.57" /> -->
+                                <joint name="ur3_wrist_3_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-6.28319 6.28319" />
+                                <geom pos="0 0 -0.0921" quat="0.707107 0.707107 0 0" type="mesh" rgba="0.7 0.7 0.7 1" mesh="ur3_wrist3" name="ur3_wrist3" />
+                                <body name="peg_base" pos="0 0 0.009" >
+                                    <site name='ur3:ee' pos="0 0.0 0.009" size='0.01 0.01 0.01' rgba='0 1 1 1' type='sphere' group='1'/>
+                                    <geom pos="0.0 0 0.0"  size="0.03 0.009" type="cylinder" rgba="0. 0. 1 1" name="pegbase" />
+                                    <site name='force_sensor' pos="0 0 0.00" size='0.01 0.01 0.01' rgba='0 1 0 0' type='sphere' group='1'/>
+                                    <site name='torque_sensor' pos="0 0 0.00" size='0.01 0.01 0.01' rgba='0 1 0 0' type='sphere' group='1'/>  
+                                    <site name='acc' pos="0 0 0.0" size='0.01 0.01 0.01' rgba='0 1 0 0' type='sphere' group='1'/>     
+                                    <body name="nozzle" pos="0 0.0 0." >
+                                        <body name="nozzle0" pos="0 0.0 0.0" quat="1 0 0 0" >
+                                            <!-- <geom type="box"  size="0.005 0.001 0.0375" quat="0.989400 -0.1452131 0 0" rgba="1 1 0 1" name="nozzle0"/> -->
+                                            <geom type="mesh"  pos="0 -0.015 0" quat="1 0 0 0" rgba="1 1 0 1" mesh="3nozzle" name="nozzle0"/>
+                                        </body> 
+                                        <body name="nozzle45" pos="0 0.0 0.0" quat="0.923879532511287 0 0 0.38268343236509" >
+                                            <!-- <geom type="box"  size="0.005 0.001 0.0375" quat="0.989400 -0.1452131 0 0" rgba="1 1 0 1" name="nozzle0"/> -->
+                                            <geom type="mesh"  pos="0 -0.015 0" quat="1 0 0 0" rgba="1 1 0 1" mesh="3nozzle" name="nozzle1"/>
+                                        </body>      
+                                        <body name="nozzle90" pos="0 0.0 0.0" quat="0.707106781186548 0 0 0.707106781186547" >
+                                            <!-- <geom type="box"  size="0.005 0.001 0.0375" quat="0.989400 -0.1452131 0 0" rgba="1 1 0 1" name="nozzle0"/> -->
+                                            <geom type="mesh"  pos="0 -0.015 0" quat="1 0 0 0" rgba="1 1 0 1" mesh="3nozzle" name="nozzle2"/>
+                                        </body>      
+                                        <body name="nozzle135" pos="0 0.0 0.0" quat="0.38268343236509 0	0 0.923879532511287" >
+                                            <!-- <geom type="box"  size="0.005 0.001 0.0375" quat="0.989400 -0.1452131 0 0" rgba="1 1 0 1" name="nozzle0"/> -->
+                                            <geom type="mesh"  pos="0 -0.015 0" quat="1 0 0 0" rgba="1 1 0 1" mesh="3nozzle" name="nozzle3"/>
+                                        </body>    
+                                        <body name="nozzle180" pos="0 0.0 0.0" quat="0 0 0 1" >
+                                            <!-- <geom type="box"  size="0.005 0.001 0.0375" quat="0.989400 -0.1452131 0 0" rgba="1 1 0 1" name="nozzle0"/> -->
+                                            <geom type="mesh"  pos="0 -0.015 0" quat="1 0 0 0" rgba="1 1 0 1" mesh="3nozzle" name="nozzle4"/>
+                                        </body> 
+                                        <body name="nozzle225" pos="0 0.0 0.0" quat="-0.38268343236509 0 0 0.923879532511287" >
+                                            <!-- <geom type="box"  size="0.005 0.001 0.0375" quat="0.989400 -0.1452131 0 0" rgba="1 1 0 1" name="nozzle0"/> -->
+                                            <geom type="mesh"  pos="0 -0.015 0" quat="1 0 0 0" rgba="1 1 0 1" mesh="3nozzle" name="nozzle5"/>
+                                        </body>      
+                                        <body name="nozzle270" pos="0 0.0 0.0" quat="-0.707106781186547	0 0 0.707106781186548" >
+                                            <!-- <geom type="box"  size="0.005 0.001 0.0375" quat="0.989400 -0.1452131 0 0" rgba="1 1 0 1" name="nozzle0"/> -->
+                                            <geom type="mesh"  pos="0 -0.015 0" quat="1 0 0 0" rgba="1 1 0 1" mesh="3nozzle" name="nozzle6"/>
+                                        </body>      
+                                        <body name="nozzle315" pos="0 0.0 0.0" quat="-0.923879532511287	0 0	0.38268343236509" >
+                                            <!-- <geom type="box"  size="0.005 0.001 0.0375" quat="0.989400 -0.1452131 0 0" rgba="1 1 0 1" name="nozzle0"/> -->
+                                            <geom type="mesh"  pos="0 -0.015 0" quat="1 0 0 0" rgba="1 1 0 1" mesh="3nozzle" name="nozzle7"/>
+                                        </body>                                      
+                                    </body>
+                                </body> 
+                             
+                            </body>
+                        </body>
+                    </body>
+                </body>
+            </body>
+        </body>
+        <site name='wpt1' pos="-0.24649865 0.455 0.2013359" quat="0.707107 -0.707107 0 0" size='0.01 0.01 0.01' rgba='0 1 0 1' type='sphere' group='1'/>
+        <site name='wpt2' pos="-0.24650092 0.52938635 0.09013359" quat="0.707107 0.707107 0 0" size='0.01 0.01 0.01' rgba='0 0 1 1' type='sphere' group='1'/>
+    
+        <geom pos="0.15 0 -0.25" size="0 0 3" type="plane" material="matplane"/>
+        <camera name="bodyhigh2" pos="0.5 -1.5 0.5" quat="0.766 0.6428 0 0"/>
+        <!-- <geom condim="6" pos="0.15 0 -0.25" size="4.0 4.0 0.05" friction="1.0 0.005 0.0001" rgba="0 1 0 1" type="box"/> -->
+
+    </worldbody>
+</mujoco>

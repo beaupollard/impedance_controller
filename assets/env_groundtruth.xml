@@ -1,0 +1,142 @@
+<mujoco model="ur3e_robot">
+    <compiler angle="radian" />
+    <size njmax="500" nconmax="100" />
+    <asset>
+        <texture type="skybox" builtin="gradient" rgb1="1 1 1" rgb2="0 0 0" width="512" height="512"/>
+        <texture name="texplane" type="2d" builtin="checker" rgb1=".25 .25 1" rgb2=".85 .85 .85" width="512" height="512" mark="cross" markrgb=".8 .8 .8"/>
+        <material name="matplane" reflectance="0.3" texture="texplane" texrepeat="1 1" texuniform="true"/>
+        <mesh name="ur16_base" file="ur16e/base.stl" />
+        <mesh name="ur16_shoulder" file="ur16e/shoulder.stl" />
+        <mesh name="ur16_upperarm" file="ur16e/upperarm.stl" />
+        <mesh name="ur16_forearm" file="ur16e/forearm.stl" />
+        <mesh name="ur16_wrist1" file="ur16e/wrist1.stl" />
+        <mesh name="ur16_wrist2" file="ur16e/wrist2.stl" />
+        <mesh name="ur16_wrist3" file="ur16e/wrist3.stl" />
+        <mesh name="oct_nozzle" file="meshes/nozzle_convex_primitive.STL"/>
+    </asset>
+    <option 
+        timestep="0.005" integrator="RK4">
+    </option>
+	<actuator>
+		<motor gear="1.0" joint="ur16_shoulder_pan_joint" name="ur16_shoulder_pan_joint" ctrllimited="true" ctrlrange="-100 100"/>
+		<motor gear="1.0" joint="ur16_shoulder_lift_joint" name="ur16_shoulder_lift_joint" ctrllimited="true" ctrlrange="-100 100"/>
+		<motor gear="1.0" joint="ur16_elbow_joint" name="ur16_elbow_joint" ctrllimited="true" ctrlrange="-100 100"/>
+		<motor gear="1.0" joint="ur16_wrist_1_joint" name="ur16_wrist_1_joint" ctrllimited="true" ctrlrange="-100 100"/>
+        <motor gear="1.0" joint="ur16_wrist_2_joint" name="ur16_wrist_2_joint" ctrllimited="true" ctrlrange="-100 100"/>
+        <motor gear="1.0" joint="ur16_wrist_3_joint" name="ur16_wrist_3_joint" ctrllimited="true" ctrlrange="-100 100"/>
+        <!-- <motor gear="1.0" joint="joint:2" name="bact"/> -->
+	</actuator>    
+    <sensor>
+        <force name='force_sensor' site='force_sensor'/>
+        <torque name='torque_sensor' site='torque_sensor'/>
+        <accelerometer name='acc' site='acc'/>
+        <force name='ur16_force_sensor' site='ur16_force_sensor'/>
+        <torque name='ur16_torque_sensor' site='ur16_torque_sensor'/>
+        <accelerometer name='ur16_acc' site='ur16_acc'/>
+        <!-- <gyro name='gyro' site='gyro'/> -->
+    </sensor>
+    <worldbody>
+    
+    <!-- <camera name="bodyhigh2" pos="0 0 1.5" quat="0 0.923876 0 0.382683"/> -->
+        <!-- <site name='wpt1' pos="0.1 0.26511303022606 0.076200152400305" quat="0.707107 0 0.707107 0" size='0.01 0.01 0.01' rgba='0 1 1 1' type='sphere' group='1'/> -->
+        <!-- <site name='wpt2' pos="0.2 0.26511303022606 0.076200152400305" quat="0.707107 0 -0.707107 0" size='0.01 0.01 0.01' rgba='0 0 1 1' type='sphere' group='1'/> -->
+        <site name='wpt2' pos="0.24957 0.48436 -0.34242" quat="0.5626825, 0.4930251, -0.0475338, -0.6618574" size='0.01 0.01 0.01' rgba='0 0 1 1' type='sphere' group='1'/>
+        <geom pos="0.995364490728981 0 0" quat="-1 0 0 0" type="mesh" rgba="0.7 0.7 0.7 1" mesh="ur16_base" name="ur16_base"/>
+        <body name="ur16_shoulder_link" pos="0.995364490728981 0 0.1909" quat="0 0 0 1">
+            <inertial pos="0 0 0" mass="7.369" diaginertia="0.0298193 0.0298193 0.0207253" />
+            <joint name="ur16_shoulder_pan_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-6.28319 6.28319" />
+            <geom quat="0 0 0 1" type="mesh" rgba="0.7 0.7 0.7 1" mesh="ur16_shoulder" name="ur16_shoulder"/>
+            <body name="ur16_upper_arm_link" pos="0 0 0" quat="0.707107 0.707107 0 0">
+                <inertial pos="-0.2392 0 0.175" quat="0.707107 0 0.707107 0" mass="10.45" diaginertia="0.214 0.214 0.0293906" />
+                <joint name="ur16_shoulder_lift_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-6.28319 6.28319" />
+                <geom pos="0 0 0.176" quat="0.5 0.5 -0.5 -0.5" type="mesh" rgba="0.7 0.7 0.7 1" mesh="ur16_upperarm" name="ur16_upperarm"/>
+                <body name="ur16_forearm_link" pos="-0.4784 0 0">
+                    <inertial pos="-0.18 0 0.04" quat="0.707107 0 0.707107 0" mass="4.321" diaginertia="0.0527432 0.0527432 0.0121528" />
+                    <joint name="ur16_elbow_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-3.14159 3.14159" />
+                    <geom pos="0 0 0.04" quat="0.5 0.5 -0.5 -0.5" type="mesh" rgba="0.7 0.7 0.7 1" mesh="ur16_forearm" name="ur16_forearm" />
+                    <body name="ur16_wrist_1_link" pos="-0.36 0 0.17415">
+                        <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="2.18" diaginertia="0.00613125 0.00568162 0.00568162" />
+                        <joint name="ur16_wrist_1_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-6.28319 6.28319" />
+                        <geom pos="0 0 -0.135" quat="0.707107 0.707107 0 0" type="mesh" rgba="0.7 0.7 0.7 1" mesh="ur16_wrist1" name="ur16_wrist1"/>
+                        <body name="ur16_wrist_2_link" pos="0 -0.11985 -2.45816e-11" quat="0.707107 0.707107 0 0">
+                            <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="2.033" diaginertia="0.00571781 0.0052985 0.0052985" />
+                            <joint name="ur16_wrist_2_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-6.28319 6.28319" />
+                            <geom pos="0 0 -0.12" type="mesh" rgba="0.7 0.7 0.7 1" mesh="ur16_wrist2" name="ur16_wrist2"/>
+                            <body name="ur16_wrist_3_link" pos="0 0.11655 -2.39048e-11" quat="0.707107 -0.707107 0 0">
+                                <inertial pos="0 0 -0.025" quat="0.5 0.5 -0.5 0.5" mass="0.907" diaginertia="0.000918337 0.000648127 0.000648127" />
+                                <joint name="ur16_wrist_3_joint" pos="0 0 0" axis="0 0 1" limited="true" range="-6.28319 6.28319" />
+                                <geom pos="0 0 -0.1168" quat="0.707107 0.707107 0 0" type="mesh" rgba="0.7 0.7 0.7 1" mesh="ur16_wrist3" name="ur16_wrist3"/>
+                                <body name="ur16_pegbase" pos="0 0 0" quat="1 0 0 0">
+                                    <geom pos="0.0 0 0.0"  size="0.03 0.0025" type="cylinder" rgba="0.7 0.7 0.7 1" name="ur16_pegbase" />
+                                    <site name='ur16_force_sensor' pos="0 0 0.00" size='0.01 0.01 0.01' rgba='0 1 0 0' type='sphere' group='1'/>
+                                    <site name='ur16_torque_sensor' pos="0 0 0.00" size='0.01 0.01 0.01' rgba='0 1 0 0' type='sphere' group='1'/>  
+                                    <site name='ur16_acc' pos="0 0 0.0" size='0.01 0.01 0.01' rgba='0 1 0 0' type='sphere' group='1'/>
+                                    <body name="ur16_peg" pos="0 0 0">
+                                        <geom pos="0.0 0 0.00"  size="0.03 0.0025" type="cylinder" rgba="0.7 0.7 0.7 1" name="ur16pegb0" />   
+                                        <geom pos="0.0 0 0.05"  size="0.01 0.05" type="cylinder" rgba="0.7 0.7 0.7 1" name="pegur160" />  
+                                        <!-- <site name='force_sensor' pos="0 0 0.00" size='0.01 0.01 0.01' rgba='0 1 0 0' type='sphere' group='1'/>
+                                        <site name='torque_sensor' pos="0 0 0.00" size='0.01 0.01 0.01' rgba='0 1 0 0' type='sphere' group='1'/>  
+                                        <site name='acc' pos="0 0 0.0" size='0.01 0.01 0.01' rgba='0 1 0 0' type='sphere' group='1'/>                                                -->
+                                        <site name='ur16:ee' pos="0 0.0 0.1" size='0.02 0.02 0.02' rgba='0 1 1 0' type='sphere' group='1'/>
+                                    </body>
+                                </body>
+                            </body>
+                        </body>
+                    </body>
+                </body>
+            </body>
+        </body>        
+
+        <!-- <body name="peg_base" pos="0.23495046990094 0.26511303022606 0.076200152400305" quat="0.7071068 0 0.7071068 0"> -->
+        <body name="peg_base" pos="0.24957 0.46636 -0.34242" quat="0.5626825, 0.4930251, -0.0475338, -0.6618574">
+            <geom pos="-0 0 -0.1"  size="0.1 0.1 0.1" type="box" rgba="0.7 0.7 0.7 1" name="pegbase0" />
+            <!-- <joint name="ground_truth" type="slide" pos="0 0 0" axis="0 0 1" damping="20" stiffness="60"/> -->
+            <joint name="ground_truth" type="slide" pos="0 0 0" axis="0 0 1" damping="80" stiffness="80"/>
+            <inertial pos="0 0 0" quat="1 0 0 0" mass="1.0" diaginertia="0.01 0.01 0.01"/>
+            <geom pos="0.0 0 0.0"  size="0.03 0.0025" type="cylinder" rgba="0.7 0.7 0.7 1" name="pegbase" />
+            <site name='force_sensor' pos="0 0 0.00" size='0.01 0.01 0.01' rgba='0 1 0 0' type='sphere' group='1'/>
+            <site name='torque_sensor' pos="0 0 0.00" size='0.01 0.01 0.01' rgba='0 1 0 0' type='sphere' group='1'/>  
+            <site name='acc' pos="0 0 0.0" size='0.01 0.01 0.01' rgba='0 1 0 0' type='sphere' group='1'/>             
+            <body name="nozzle" pos="0 0 0.0" >
+                <body name="nozzle0" pos="0 0 0.00">
+                    <geom type="mesh" contype="1" conaffinity="1" group="1" rgba="1 0 0 1" mesh="oct_nozzle" name="nozzle0"/>
+                </body>
+
+                <body name="nozzle45" pos="0 0 0.00" quat="0.9238795 0 0 0.3826834">
+                    <geom type="mesh" contype="1" conaffinity="1" group="1" rgba="1 0 0 1" mesh="oct_nozzle" name="nozzle45"/>
+                </body>
+
+                <body name="nozzle90" pos="0 0 0.00" quat="0.7071068 0 0 0.7071068">
+                    <geom type="mesh" contype="1" conaffinity="1" group="1" rgba="1 0 0 1" mesh="oct_nozzle" name="nozzle90"/>
+                </body>
+
+                <body name="nozzle135" pos="0 0 0.00" quat="0.3826834 0 0 0.9238795">
+                    <geom type="mesh" contype="1" conaffinity="1" group="1" rgba="1 0 0 1" mesh="oct_nozzle" name="nozzle135"/>
+                </body>
+
+                <body name="nozzle180" pos="0 0 0.0" quat="0 0 0 1">
+                    <geom type="mesh" contype="1" conaffinity="1" group="1" rgba="1 0 0 1" mesh="oct_nozzle" name="nozzle180"/>
+                </body>
+
+                <body name="nozzle225" pos="0 0 0.00" quat="-0.3826834 0 0 0.9238795">
+                    <geom type="mesh" contype="1" conaffinity="1" group="1" rgba="1 0 0 1" mesh="oct_nozzle" name="nozzle225"/>
+                </body>
+
+                <body name="nozzle270" pos="0 0 0.00" quat="-0.7071068 0 0 0.7071068">
+                    <geom type="mesh" contype="1" conaffinity="1" group="1" rgba="1 0 0 1" mesh="oct_nozzle" name="nozzle270"/>
+                </body>
+
+                <body name="nozzle315" pos="0 0 0.00" quat="-0.9238795 0 0 0.3826834">
+                    <geom type="mesh" contype="1" conaffinity="1" group="1" rgba="1 0 0 1" mesh="oct_nozzle" name="nozzle315"/>
+                </body>
+                <site name='ur3:ee' pos="0 0.0 0.0" size='0.01 0.01 0.01' rgba='0 1 1 0' type='sphere' group='1'/>
+                <!-- <site name='wpt2' pos="0.0 0.0 0.0" quat="0 0 1 0" size='0.01 0.01 0.01' rgba='0 0 1 1' type='sphere' group='1'/> -->
+            </body>
+        </body>     
+        <!-- <geom condim="6" pos="0.15 0 -0.25" size="4.0 4.0 0.05" friction="1.0 0.005 0.0001" rgba="0 1 0 1" type="box"/> -->
+        <!-- <body name='cam' pos="0 0 "> -->
+        <geom pos="0.15 0 -0.25" size="0 0 3" type="plane" material="matplane"/>
+        <camera name="bodyhigh2" pos="0.5 -1.5 0.5" quat="0.766 0.6428 0 0"/>
+        <!-- </body> -->
+    </worldbody>
+</mujoco>
